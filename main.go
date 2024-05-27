@@ -14,5 +14,5 @@ func main() {
 		Handler: mux,
 	}
 	log.Println("Listening...")
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }
