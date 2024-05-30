@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -20,35 +19,8 @@ const metricsTemplate = `<html>
 </html>
 `
 
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-
-	newHandler := func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits++
-		next.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(newHandler)
-}
-
-func (cfg *apiConfig) metricsHandler(w http.ResponseWriter, r *http.Request) {
-	metrics := fmt.Sprintf(metricsTemplate, cfg.fileserverHits)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(metrics))
-}
-
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	cfg.fileserverHits = 0
-}
-
 func main() {
 	apiCfg := &apiConfig{}
-
-	checkHealthHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
 
 	mux := http.NewServeMux()
 	fileServerHandler := http.FileServer(http.Dir("."))
@@ -57,6 +29,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", checkHealthHandler)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("/api/reset", apiCfg.resetHandler)
+	mux.HandleFunc("POST /api/chirps", validationHandler)
 
 	server := &http.Server{
 		Addr:    ":8080",
