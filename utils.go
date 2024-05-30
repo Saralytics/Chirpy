@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chirpy/m/internal/database"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,10 @@ var profane_words = [3]string{"kerfuffle", "sharbert", "fornax"}
 
 type errorResp struct {
 	Error string `json:"error"`
+}
+
+type Handler struct {
+	DB *database.DB
 }
 
 func checkHealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,12 +67,13 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 }
 
-func validationHandler(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
+func (h *Handler) validationHandler(w http.ResponseWriter, r *http.Request) {
+
+	type payload struct {
 		Body string `json:"body"`
 	}
 	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
+	params := payload{}
 	err := decoder.Decode(&params)
 
 	if err != nil {
@@ -92,8 +98,8 @@ func validationHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	// validRespBody := Chirp{Body: strings.Join(words, " ")}
-	// Create chirp and save this to database
+	body := strings.Join(words, " ")
+	newChirp, err := h.DB.CreateChirp(body)
 
-	respondWithJSON(w, 201, validRespBody)
+	respondWithJSON(w, 201, newChirp)
 }

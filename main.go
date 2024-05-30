@@ -1,6 +1,8 @@
 package main
 
 import (
+	"chirpy/m/internal/database"
+	// "chirpy/m/internal/utils"
 	"log"
 	"net/http"
 )
@@ -20,6 +22,15 @@ const metricsTemplate = `<html>
 `
 
 func main() {
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		log.Fatalf("Error initializing database : %v", err)
+	}
+
+	handler := &Handler{
+		DB: db,
+	}
+
 	apiCfg := &apiConfig{}
 
 	mux := http.NewServeMux()
@@ -29,7 +40,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", checkHealthHandler)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("/api/reset", apiCfg.resetHandler)
-	mux.HandleFunc("POST /api/chirps", validationHandler)
+	mux.HandleFunc("POST /api/chirps", handler.validationHandler)
 
 	server := &http.Server{
 		Addr:    ":8080",
