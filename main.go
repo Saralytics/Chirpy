@@ -2,24 +2,14 @@ package main
 
 import (
 	"chirpy/m/internal/database"
-	// "chirpy/m/internal/utils"
 	"log"
 	"net/http"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	DB             *database.DB
 }
-
-const metricsTemplate = `<html>
-
-<body>
-    <h1>Welcome, Chirpy Admin</h1>
-    <p>Chirpy has been visited %d times!</p>
-</body>
-
-</html>
-`
 
 func main() {
 	db, err := database.NewDB("database.json")
@@ -27,20 +17,21 @@ func main() {
 		log.Fatalf("Error initializing database : %v", err)
 	}
 
-	handler := &Handler{
-		DB: db,
+	apiCfg := &apiConfig{
+		fileserverHits: 0,
+		DB:             db,
 	}
-
-	apiCfg := &apiConfig{}
 
 	mux := http.NewServeMux()
 	fileServerHandler := http.FileServer(http.Dir("."))
 	wrappedFileServerHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", fileServerHandler))
 	mux.Handle("/app/", wrappedFileServerHandler)
-	mux.HandleFunc("GET /api/healthz", checkHealthHandler)
-	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
-	mux.HandleFunc("/api/reset", apiCfg.resetHandler)
-	mux.HandleFunc("POST /api/chirps", handler.validationHandler)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("/api/reset", apiCfg.handlerReset)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsGet)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpGetByID)
 
 	server := &http.Server{
 		Addr:    ":8080",
