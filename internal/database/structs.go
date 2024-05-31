@@ -12,8 +12,9 @@ type DB struct {
 }
 
 type User struct {
-	ID    int    `json:"id"`
-	EMAIL string `json:"email"`
+	ID           int    `json:"id"`
+	PasswordHash string `json:"password"`
+	Email        string `json:"email"`
 }
 
 type DBStructure struct {

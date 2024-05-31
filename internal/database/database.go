@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // NewDB creates a new database connection
@@ -133,7 +135,7 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 	return nil
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email string, passwordHash string) (User, error) {
 
 	// load the db
 	curDB, err := db.LoadDB()
@@ -141,11 +143,19 @@ func (db *DB) CreateUser(email string) (User, error) {
 		return User{}, err
 	}
 
+	// check if the email already exists
+	for _, user := range curDB.Users {
+		if email == user.Email {
+			return User{}, errors.New("the email already exists")
+		}
+	}
+
 	newID := len(curDB.Users) + 1
 
 	newUser := User{
-		ID:    newID,
-		EMAIL: email,
+		ID:           newID,
+		Email:        email,
+		PasswordHash: passwordHash,
 	}
 
 	curDB.Users[newID] = newUser
@@ -155,4 +165,22 @@ func (db *DB) CreateUser(email string) (User, error) {
 		return User{}, err
 	}
 	return newUser, nil
+}
+
+func (db *DB) LoginUser(email, password string) (User, error) {
+	// search for the email in the db
+	curDB, err := db.LoadDB()
+	if err != nil {
+		return User{}, err
+	}
+	for _, user := range curDB.Users {
+		if user.Email == email {
+			err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+			if err != nil {
+				return User{}, errors.New("Unauthorized")
+			}
+			return user, nil
+		}
+	}
+	return User{}, errors.New("user not found")
 }

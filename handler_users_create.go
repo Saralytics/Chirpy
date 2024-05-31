@@ -3,12 +3,15 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	// parse the request
 	type payload struct {
-		EMAIL string `json:"email"`
+		PASSWORD string `json:"password"`
+		EMAIL    string `json:"email"`
 	}
 	var params payload
 	decoder := json.NewDecoder(r.Body).Decode(&params)
@@ -18,12 +21,26 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
 
+	pwdHash, err := bcrypt.GenerateFromPassword([]byte(params.PASSWORD), 0)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+	hashedPwdString := string(pwdHash)
+
 	// save it to the database
-	// fmt.Println("Saved to database... %s", params.EMAIL)
-	resp, err := cfg.DB.CreateUser(params.EMAIL)
+
+	data, err := cfg.DB.CreateUser(params.EMAIL, hashedPwdString)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating the user")
 	}
-	respondWithJSON(w, http.StatusCreated, resp)
+
+	response := struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}{
+		ID:    data.ID,
+		Email: data.Email,
+	}
+	respondWithJSON(w, http.StatusCreated, response)
 
 }
