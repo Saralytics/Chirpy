@@ -11,6 +11,12 @@ type DB struct {
 	mux  *sync.RWMutex
 }
 
+type User struct {
+	ID    int    `json:"id"`
+	EMAIL string `json:"email"`
+}
+
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
+	Users  map[int]User  `json:"users"`
 }
