@@ -31,7 +31,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 	data, err := cfg.DB.CreateUser(params.EMAIL, hashedPwdString)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error creating the user")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
 
 	response := struct {

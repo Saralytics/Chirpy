@@ -1,17 +1,31 @@
+// godotenv.Load()
 package main
 
 import (
 	"chirpy/m/internal/database"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 )
+
+// by default, godotenv will look for a file named .env in the current directory
 
 type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
+	jwtKey         string
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	db, err := database.NewDB("database.json")
 	if err != nil {
 		log.Fatalf("Error initializing database : %v", err)
@@ -20,6 +34,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
 		DB:             db,
+		jwtKey:         jwtSecret,
 	}
 
 	mux := http.NewServeMux()
@@ -34,6 +49,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpGetByID)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerUsersLogin)
+	mux.HandleFunc("PUT /api/users", apiCfg.handlerUsersUpdate)
 
 	server := &http.Server{
 		Addr:    ":8080",
