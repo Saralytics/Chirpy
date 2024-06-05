@@ -24,8 +24,9 @@ func NewDB(path string) (*DB, error) {
 
 func (db *DB) CreateDB() error {
 	dbStructure := DBStructure{
-		Chirps: map[int]Chirp{},
-		Users:  map[int]User{},
+		Chirps:        map[int]Chirp{},
+		Users:         map[int]User{},
+		RefreshTokens: map[int]RefreshToken{},
 	}
 
 	err := db.writeDB(dbStructure)

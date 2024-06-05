@@ -1,19 +1,13 @@
 package main
 
 import (
+	"chirpy/m/internal/auth"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// ErrNoAuthHeaderIncluded -
-var ErrNoAuthHeaderIncluded = errors.New("not auth header included in request")
 
 func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request) {
 	// parse the request
@@ -31,7 +25,7 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	// extract the token
-	token, err := GetBearerToken(r.Header)
+	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't find JWT")
 		return
@@ -39,9 +33,9 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 
 	// validate the token
 	// get user id
-	userIDString, err := validateJWT(token, cfg.jwtKey)
+	userIDString, err := auth.ValidateJWT(token, cfg.jwtKey)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, err.Error())
+		respondWithError(w, http.StatusUnauthorized, "failed to validate jwt")
 		return
 	}
 
@@ -76,46 +70,4 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 		Email: user.Email,
 	}
 	respondWithJSON(w, http.StatusOK, response)
-}
-
-func validateJWT(tokenString, jwtSecret string) (string, error) {
-	claimsStruct := jwt.RegisteredClaims{}
-	token, err := jwt.ParseWithClaims(
-		tokenString,
-		&claimsStruct,
-		func(token *jwt.Token) (interface{}, error) { return []byte(jwtSecret), nil },
-	)
-	if err != nil {
-		return "", err
-	}
-
-	userIDString, err := token.Claims.GetSubject()
-	fmt.Print(userIDString)
-	if err != nil {
-		return "", err
-	}
-
-	issuer, err := token.Claims.GetIssuer()
-	if err != nil {
-		return "", err
-	}
-	if issuer != string("chirpy") {
-		return "", errors.New("invalid issuer")
-	}
-
-	return userIDString, nil
-}
-
-// GetBearerToken -
-func GetBearerToken(headers http.Header) (string, error) {
-	authHeader := headers.Get("Authorization")
-	if authHeader == "" {
-		return "", ErrNoAuthHeaderIncluded
-	}
-	splitAuth := strings.Split(authHeader, " ")
-	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
-		return "", errors.New("malformed authorization header")
-	}
-
-	return splitAuth[1], nil
 }

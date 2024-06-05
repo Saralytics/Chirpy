@@ -16,6 +16,7 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
 	jwtKey         string
+	refresh_token  string
 }
 
 func main() {
@@ -50,6 +51,8 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerUsersLogin)
 	mux.HandleFunc("PUT /api/users", apiCfg.handlerUsersUpdate)
+	mux.HandleFunc("POST /api/refresh", apiCfg.handlerTokenRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handlerTokenRevoke)
 
 	server := &http.Server{
 		Addr:    ":8080",

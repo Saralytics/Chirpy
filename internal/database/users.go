@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -38,22 +39,27 @@ func (db *DB) CreateUser(email string, passwordHash string) (User, error) {
 	return newUser, nil
 }
 
-func (db *DB) LoginUser(email, password string) (User, error) {
+func (db *DB) LoginUser(email, password string) (User, RefreshToken, error) {
 	// search for the email in the db
 	curDB, err := db.LoadDB()
 	if err != nil {
-		return User{}, err
+		return User{}, RefreshToken{}, err
 	}
 	for _, user := range curDB.Users {
 		if user.Email == email {
 			err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+
 			if err != nil {
-				return User{}, errors.New("Unauthorized")
+				return User{}, RefreshToken{}, errors.New("Unauthorized")
 			}
-			return user, nil
+
+			// generate a refresh token if the use can be authenticated
+			expiry := time.Now().AddDate(0, 0, 60)
+			refresh_token, err := db.GenerateRefreshToken(user.ID, expiry)
+			return user, refresh_token, nil
 		}
 	}
-	return User{}, errors.New("user not found")
+	return User{}, RefreshToken{}, errors.New("user not found")
 }
 
 func (db *DB) UpdateUser(id int, email string, passwordHash string) (User, error) {
