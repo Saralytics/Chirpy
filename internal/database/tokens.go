@@ -51,9 +51,12 @@ func (db *DB) RefreshJWT(token string, jwtSecret string) (string, error) {
 	}
 	for _, currentToken := range curDB.RefreshTokens {
 		if currentToken.Token == token && currentToken.Expiry.After(time.Now()) {
-			auth.CreateJWT(currentToken.UserID, jwtSecret)
+			new_jwt, err := auth.CreateJWT(currentToken.UserID, jwtSecret)
+			if err != nil {
+				return "", err
+			}
 
-			return currentToken.Token, nil
+			return new_jwt, nil
 		}
 	}
 	return "", ErrTokenExpiredOrNotValid

@@ -2,7 +2,7 @@ package database
 
 import "errors"
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, author_id int) (Chirp, error) {
 	dbStructure, err := db.LoadDB()
 	if err != nil {
 		return Chirp{}, err
@@ -10,8 +10,9 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 
 	id := len(dbStructure.Chirps) + 1
 	newChirp := Chirp{
-		ID:   id,
-		Body: body,
+		ID:       id,
+		Body:     body,
+		AuthorID: author_id,
 	}
 
 	dbStructure.Chirps[id] = newChirp
@@ -53,4 +54,21 @@ func (db *DB) GetChirpByID(id int) (Chirp, error) {
 
 	return Chirp{}, errors.New("this chirp is not found")
 
+}
+
+func (db *DB) DeleteChirpByID(userID int, chirpID int) error {
+	// find the author id of the chirp
+	curDB, err := db.LoadDB()
+	if err != nil {
+		return err
+	}
+
+	chirpToDelete := curDB.Chirps[chirpID]
+	authorID := chirpToDelete.AuthorID
+
+	if authorID != userID {
+		return errors.New("user cannot perform this action on this resource")
+	}
+	delete(curDB.Chirps, chirpID)
+	return nil
 }
