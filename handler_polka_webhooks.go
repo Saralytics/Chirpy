@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chirpy/m/internal/auth"
 	"encoding/json"
 	"net/http"
 )
@@ -8,6 +9,15 @@ import (
 const UpgradedStatus = "user.upgraded"
 
 func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, r *http.Request) {
+
+	received_key, err := auth.GetApiKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+	}
+	if received_key != cfg.polkaApiKey {
+		respondWithError(w, http.StatusUnauthorized, "")
+	}
+
 	type payload struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -17,7 +27,7 @@ func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, r *http.Request
 	var params payload
 	decoder := json.NewDecoder(r.Body).Decode(&params)
 
-	err := decoder
+	err = decoder
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}

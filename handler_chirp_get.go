@@ -8,27 +8,27 @@ import (
 )
 
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.DB.GetChirps()
+
+	author_id_str := r.URL.Query().Get("author_id")
+	if len(author_id_str) != 0 {
+		// get chirp by author
+		author_id_int, err := strconv.Atoi(author_id_str)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "The author ID is invalid")
+		}
+		chirps, err := getChirpsByAuthor(cfg, author_id_int)
+		if err != nil {
+			respondWithError(w, http.StatusNotFound, err.Error())
+		}
+		respondWithJSON(w, http.StatusOK, chirps)
+
+	}
+
+	chirps, err := getAllChirps(cfg)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error getting from database")
-
+		respondWithError(w, http.StatusNotFound, "")
 	}
-
-	chirps := []database.Chirp{}
-	for _, dbChirp := range dbChirps {
-		chirps = append(chirps, database.Chirp{
-			ID:       dbChirp.ID,
-			Body:     dbChirp.Body,
-			AuthorID: dbChirp.AuthorID,
-		})
-	}
-
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
-
 	respondWithJSON(w, http.StatusOK, chirps)
-
 }
 
 func (cfg *apiConfig) handlerChirpGetByID(w http.ResponseWriter, r *http.Request) {
@@ -49,4 +49,48 @@ func (cfg *apiConfig) handlerChirpGetByID(w http.ResponseWriter, r *http.Request
 
 	respondWithJSON(w, http.StatusOK, dbChirp)
 
+}
+
+func getAllChirps(cfg *apiConfig) ([]database.Chirp, error) {
+	dbChirps, err := cfg.DB.GetChirps()
+	if err != nil {
+		return nil, err
+	}
+
+	chirps := []database.Chirp{}
+	for _, dbChirp := range dbChirps {
+		chirps = append(chirps, database.Chirp{
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
+		})
+	}
+
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+	})
+
+	return chirps, nil
+}
+
+func getChirpsByAuthor(cfg *apiConfig, author_id int) ([]database.Chirp, error) {
+	dbChirps, err := cfg.DB.GetChirpsByAuthor(author_id)
+	if err != nil {
+		return nil, err
+	}
+
+	chirps := []database.Chirp{}
+	for _, dbChirp := range dbChirps {
+		chirps = append(chirps, database.Chirp{
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
+		})
+	}
+
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+	})
+
+	return chirps, nil
 }

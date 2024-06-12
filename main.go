@@ -16,6 +16,7 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
 	jwtKey         string
+	polkaApiKey    string
 	refresh_token  string
 }
 
@@ -26,6 +27,7 @@ func main() {
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
+	apiKey := os.Getenv("POLKA_APIKEY")
 
 	db, err := database.NewDB("database.json")
 	if err != nil {
@@ -36,6 +38,7 @@ func main() {
 		fileserverHits: 0,
 		DB:             db,
 		jwtKey:         jwtSecret,
+		polkaApiKey:    apiKey,
 	}
 
 	mux := http.NewServeMux()
