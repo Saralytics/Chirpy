@@ -26,6 +26,7 @@ type User struct {
 	ID           int    `json:"id"`
 	PasswordHash string `json:"password"`
 	Email        string `json:"email"`
+	IsChirpyRed  bool   `json:"is_chirpy_red"`
 }
 
 type RefreshToken struct {

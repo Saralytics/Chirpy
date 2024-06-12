@@ -28,11 +28,13 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 		Email        string `json:"email"`
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
+		IsChirpyRed  bool   `json:"is_chirpy_red"`
 	}{
 		ID:           user.ID,
 		Email:        user.Email,
 		Token:        createdToken,
 		RefreshToken: refresh_token.Token,
+		IsChirpyRed:  user.IsChirpyRed,
 	}
 
 	if err != nil {

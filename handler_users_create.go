@@ -35,11 +35,13 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	}
 
 	response := struct {
-		ID    int    `json:"id"`
-		Email string `json:"email"`
+		ID          int    `json:"id"`
+		Email       string `json:"email"`
+		IsChirpyRed bool   `json:"is_chirpy_red"`
 	}{
-		ID:    data.ID,
-		Email: data.Email,
+		ID:          data.ID,
+		Email:       data.Email,
+		IsChirpyRed: data.IsChirpyRed,
 	}
 	respondWithJSON(w, http.StatusCreated, response)
 

@@ -28,6 +28,7 @@ func (db *DB) CreateUser(email string, passwordHash string) (User, error) {
 		ID:           newID,
 		Email:        email,
 		PasswordHash: passwordHash,
+		IsChirpyRed:  false,
 	}
 
 	curDB.Users[newID] = newUser
