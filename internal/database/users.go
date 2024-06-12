@@ -89,3 +89,30 @@ func (db *DB) UpdateUser(id int, email string, passwordHash string) (User, error
 	return User{}, errors.New("user not found")
 
 }
+
+func (db *DB) UpgradeUser(id int) error {
+	// load the current db
+	// find the user id
+	// update the info
+	// write it back
+	curDB, err := db.LoadDB()
+	if err != nil {
+		return err
+	}
+
+	for _, user := range curDB.Users {
+		if user.ID == id {
+			user.IsChirpyRed = true
+
+		}
+		curDB.Users[id] = user
+		err = db.writeDB(curDB)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	}
+	return errors.New("user not found")
+
+}
