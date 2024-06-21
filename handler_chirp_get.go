@@ -10,13 +10,18 @@ import (
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 
 	author_id_str := r.URL.Query().Get("author_id")
+	sort_order_str := r.URL.Query().Get("sort")
+	if len(sort_order_str) == 0 {
+		sort_order_str = "asc"
+	}
+
 	if len(author_id_str) != 0 {
 		// get chirp by author
 		author_id_int, err := strconv.Atoi(author_id_str)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "The author ID is invalid")
 		}
-		chirps, err := getChirpsByAuthor(cfg, author_id_int)
+		chirps, err := getChirpsByAuthor(cfg, author_id_int, sort_order_str)
 		if err != nil {
 			respondWithError(w, http.StatusNotFound, err.Error())
 		}
@@ -24,7 +29,7 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	chirps, err := getAllChirps(cfg)
+	chirps, err := getAllChirps(cfg, sort_order_str)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "")
 	}
@@ -51,7 +56,7 @@ func (cfg *apiConfig) handlerChirpGetByID(w http.ResponseWriter, r *http.Request
 
 }
 
-func getAllChirps(cfg *apiConfig) ([]database.Chirp, error) {
+func getAllChirps(cfg *apiConfig, sort_order string) ([]database.Chirp, error) {
 	dbChirps, err := cfg.DB.GetChirps()
 	if err != nil {
 		return nil, err
@@ -66,14 +71,19 @@ func getAllChirps(cfg *apiConfig) ([]database.Chirp, error) {
 		})
 	}
 
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
-
+	if sort_order == "asc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[j].ID < chirps[i].ID
+		})
+	}
 	return chirps, nil
 }
 
-func getChirpsByAuthor(cfg *apiConfig, author_id int) ([]database.Chirp, error) {
+func getChirpsByAuthor(cfg *apiConfig, author_id int, sort_order string) ([]database.Chirp, error) {
 	dbChirps, err := cfg.DB.GetChirpsByAuthor(author_id)
 	if err != nil {
 		return nil, err
@@ -88,9 +98,15 @@ func getChirpsByAuthor(cfg *apiConfig, author_id int) ([]database.Chirp, error) 
 		})
 	}
 
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
+	if sort_order == "asc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[j].ID < chirps[i].ID
+		})
+	}
 
 	return chirps, nil
 }
